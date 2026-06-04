@@ -6,8 +6,11 @@
       '/oauth2-proxy.' +
       (hostvars[inventory_hostname]['oauth2_proxy_conf'] | default('conf'))  }}"
     owner: "root"
-    group: "root"
-    mode: "0644"
+    # config содержит client_secret в plaintext — service user должен читать,
+    # но не world-readable. Group = oauth2-proxy которая создаётся в pre_req
+    # / download / package install.
+    group: "{{ hostvars[inventory_hostname]['oauth2_proxy_group'] | default('root') }}"
+    mode: "0640"
   when:
     - "vars['oauth2p_settings'] is defined"
     - "vars['oauth2p_settings'] != []"
