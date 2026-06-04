@@ -1,4 +1,21 @@
 ---
+# Defaults для Debian. oauth2-proxy не в Debian apt repos — для Debian
+# деплоим через tarball download (install_package: 'false'). Для Arch
+# пакет есть в AUR (asbest/oauth2-proxy) — там можно install_package: 'true'.
 oauth2_proxy_service: 'oauth2-proxy'
 oauth2_proxy_package: 'oauth2-proxy'
 oauth2_proxy_dest: '/etc/oauth2-proxy'
+oauth2_proxy_conf: 'cfg'
+
+# Tarball install paths (install_package: 'false').
+oauth2_proxy_bin_dir: '/usr/local/bin'
+oauth2_proxy_bin: '/usr/local/bin/oauth2-proxy'
+oauth2_proxy_user: 'oauth2-proxy'
+oauth2_proxy_group: 'oauth2-proxy'
+
+# Tarball download (github releases). Override per-host если нужно
+# зафиксировать version'у.
+oauth2_proxy_url: 'https://github.com/oauth2-proxy/oauth2-proxy/releases/download'
+oauth2_proxy_arch: 'linux-amd64'
+oauth2_proxy_packages_deps:
+  - 'tar'
