@@ -1,0 +1,117 @@
+---
+# Tarball install для OS где нет package в repo (Debian).
+# Не запускается если install_package: 'true'.
+
+- name: "oauth2_proxy | Install deps for download mode"
+  ansible.builtin.package:
+    name: "{{ hostvars[inventory_hostname]['oauth2_proxy_packages_deps'] }}"
+    state: 'present'
+
+- name: "oauth2_proxy | Resolve version (если 'latest' — github lookup)"
+  community.general.github_release:
+    user: 'oauth2-proxy'
+    repo: 'oauth2-proxy'
+    action: 'latest_release'
+  run_once: true
+  register: '_oauth2_proxy_latest'
+  delegate_to: 'localhost'
+  when:
+    - "hostvars[inventory_hostname]['oauth2_proxy'] |
+       community.general.json_query('[].version | [0]') == 'latest'"
+
+- name: "oauth2_proxy | Set resolved version"
+  ansible.builtin.set_fact:
+    oauth2_proxy_version_resolved: "{{
+      _oauth2_proxy_latest.tag if _oauth2_proxy_latest.changed
+      else hostvars[inventory_hostname]['oauth2_proxy']
+           | community.general.json_query('[].version | [0]') }}"
+
+- name: "oauth2_proxy | Ensure system user exists"
+  ansible.builtin.user:
+    name: "{{ hostvars[inventory_hostname]['oauth2_proxy_user'] }}"
+    group: "{{ hostvars[inventory_hostname]['oauth2_proxy_group'] }}"
+    system: true
+    home: '/nonexistent'
+    shell: '/usr/sbin/nologin'
+    state: 'present'
+    create_home: false
+  ignore_errors: true
+  register: '_oauth2_proxy_user_create'
+
+- name: "oauth2_proxy | Ensure system group exists (fallback if user task failed)"
+  ansible.builtin.group:
+    name: "{{ hostvars[inventory_hostname]['oauth2_proxy_group'] }}"
+    system: true
+    state: 'present'
+  when: _oauth2_proxy_user_create.failed | default(false)
+
+- name: "oauth2_proxy | Ensure system user exists (retry after group)"
+  ansible.builtin.user:
+    name: "{{ hostvars[inventory_hostname]['oauth2_proxy_user'] }}"
+    group: "{{ hostvars[inventory_hostname]['oauth2_proxy_group'] }}"
+    system: true
+    home: '/nonexistent'
+    shell: '/usr/sbin/nologin'
+    state: 'present'
+    create_home: false
+  when: _oauth2_proxy_user_create.failed | default(false)
+
+- name: "oauth2_proxy | Ensure config dir exists"
+  ansible.builtin.file:
+    path: "{{ hostvars[inventory_hostname]['oauth2_proxy_dest'] }}"
+    state: 'directory'
+    owner: 'root'
+    group: "{{ hostvars[inventory_hostname]['oauth2_proxy_group'] }}"
+    mode: '0750'
+
+- name: "oauth2_proxy | Download & unarchive binary"
+  ansible.builtin.unarchive:
+    src: "{{ hostvars[inventory_hostname]['oauth2_proxy_url'] + '/'
+      + oauth2_proxy_version_resolved + '/oauth2-proxy-'
+      + oauth2_proxy_version_resolved + '.'
+      + hostvars[inventory_hostname]['oauth2_proxy_arch'] + '.tar.gz' }}"
+    dest: "{{ hostvars[inventory_hostname]['oauth2_proxy_bin_dir'] }}"
+    remote_src: 'yes'
+    extra_opts:
+      - '--strip-components=1'
+      - '--wildcards'
+      - '*/oauth2-proxy'
+    owner: 'root'
+    group: 'root'
+    mode: '0755'
+  notify:
+    - "Restart oauth2-proxy"
+
+- name: "oauth2_proxy | Deploy systemd unit"
+  ansible.builtin.copy:
+    dest: "/etc/systemd/system/{{ hostvars[inventory_hostname]['oauth2_proxy_service'] }}.service"
+    owner: 'root'
+    group: 'root'
+    mode: '0644'
+    content: |
+      [Unit]
+      Description=oauth2-proxy (reverse-proxy authentication for upstream services)
+      Documentation=https://oauth2-proxy.github.io/oauth2-proxy/
+      After=network-online.target
+      Wants=network-online.target
+
+      [Service]
+      Type=simple
+      User={{ hostvars[inventory_hostname]['oauth2_proxy_user'] }}
+      Group={{ hostvars[inventory_hostname]['oauth2_proxy_group'] }}
+      ExecStart={{ hostvars[inventory_hostname]['oauth2_proxy_bin'] }} \
+        --config={{ hostvars[inventory_hostname]['oauth2_proxy_dest'] }}/oauth2-proxy.{{ hostvars[inventory_hostname]['oauth2_proxy_conf'] | default('cfg') }}
+      Restart=on-failure
+      RestartSec=5s
+      LimitNOFILE=65535
+      NoNewPrivileges=true
+      PrivateTmp=true
+      ProtectSystem=strict
+      ProtectHome=read-only
+      ReadOnlyPaths={{ hostvars[inventory_hostname]['oauth2_proxy_dest'] }}
+
+      [Install]
+      WantedBy=multi-user.target
+  notify:
+    - "Daemon reload"
+    - "Restart oauth2-proxy"

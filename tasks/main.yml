@@ -2,7 +2,7 @@
 - name: "oauth2_proxy | Include pre requisite tasks"
   ansible.builtin.import_tasks:
     file: "pre_requisite.yml"
-- name: "oauth2_proxy | Include packages tasks"
+- name: "oauth2_proxy | Include packages tasks [package install]"
   ansible.builtin.include_tasks:
     file: "packages.yml"
   when:
@@ -14,6 +14,21 @@
        community.general.json_query(vars['oauth2p_install_package']) == 'true'"
   vars:
     oauth2p_install_package: "[] | map(&install_package || 'false', @) | [0]"
+
+# Для OS без пакета (Debian) — install_package: 'false' + download tarball.
+- name: "oauth2_proxy | Include download tasks [tarball install]"
+  ansible.builtin.include_tasks:
+    file: "download.yml"
+  when:
+    - "hostvars[inventory_hostname]['oauth2_proxy'] is defined"
+    - "hostvars[inventory_hostname]['oauth2_proxy'] != ''"
+    - "hostvars[inventory_hostname]['oauth2_proxy'] |
+       community.general.json_query(vars['oauth2p_install_package']) is defined"
+    - "hostvars[inventory_hostname]['oauth2_proxy'] |
+       community.general.json_query(vars['oauth2p_install_package']) == 'false'"
+  vars:
+    oauth2p_install_package: "[] | map(&install_package || 'false', @) | [0]"
+
 - name: "oauth2_proxy | Include deployment tasks"
   ansible.builtin.import_tasks:
     file: "deploy_oauth2_proxy.yml"
