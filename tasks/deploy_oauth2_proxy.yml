@@ -18,6 +18,9 @@
     - "vars['oauth2p_settings'] != None"
   notify:
     - "Restart oauth2-proxy"
+  # config contains client_secret + cookie_secret в plaintext.
+  # no_log prevents leak to transcript on --check --diff.
+  no_log: true
 - name: "oauth2_proxy | Enable oauth2_proxy service"
   ansible.builtin.systemd:
     name: "{{ hostvars[inventory_hostname]['oauth2_proxy_service'] }}"
