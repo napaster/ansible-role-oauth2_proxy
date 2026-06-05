@@ -105,7 +105,7 @@
 {{ 'client_id = \"' + o['client_id'] + '\"' }}
 {% endif %}
 {% if o['client_secret'] is defined and o['client_secret'] != '' %}
-{{ 'client_secret = \"' + o['client_secret'] + '\"' }}
+{{ 'client_secret = \"' + (o['client_secret'] | string | trim) + '\"' }}
 {% endif %}
 {% if o['client_secret_file'] is defined and o['client_secret_file'] != '' %}
 {{ 'client_secret_file = \"' + o['client_secret_file'] + '\"' }}
@@ -158,7 +158,7 @@
 {{ 'cookie_samesite = \"' + o['cookie_samesite'] + '\"' }}
 {% endif %}
 {% if o['cookie_secret'] is defined and o['cookie_secret'] != '' %}
-{{ 'cookie_secret = \"' + o['cookie_secret'] + '\"' }}
+{{ 'cookie_secret = \"' + (o['cookie_secret'] | string | trim) + '\"' }}
 {% endif %}
 {% if o['cookie_secure'] is defined and
   o['cookie_secure'] in ['true', 'false'] %}

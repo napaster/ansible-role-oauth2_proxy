@@ -22,9 +22,9 @@
 - name: "oauth2_proxy | Set resolved version"
   ansible.builtin.set_fact:
     oauth2_proxy_version_resolved: "{{
-      _oauth2_proxy_latest.tag if _oauth2_proxy_latest.changed
-      else hostvars[inventory_hostname]['oauth2_proxy']
-           | community.general.json_query('[].version | [0]') }}"
+      _oauth2_proxy_latest.tag
+      | default(hostvars[inventory_hostname]['oauth2_proxy']
+                | community.general.json_query('[].version | [0]')) }}"
 
 - name: "oauth2_proxy | Ensure system user exists"
   ansible.builtin.user:

@@ -3,3 +3,7 @@ oauth2_proxy_service: 'oauth2-proxy'
 oauth2_proxy_package: 'oauth2-proxy'
 oauth2_proxy_dest: '/etc/oauth2-proxy'
 oauth2_proxy_conf: 'cfg'
+# AUR пакет asbest/oauth2-proxy создаёт системного юзера + группу
+# oauth2-proxy (uid/gid 959 typically), systemd unit бежит под ними.
+# Config 0640 root:oauth2-proxy чтобы daemon мог читать.
+oauth2_proxy_group: 'oauth2-proxy'
