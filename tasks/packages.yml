@@ -1,35 +1,35 @@
 ---
 - name: "oauth2_proxy | Install the required packages in Redhat derivatives"
   when:
-    - "hostvars[inventory_hostname]['ansible_os_family'] == 'RedHat'"
+    - "hostvars[inventory_hostname]['ansible_facts']['os_family'] == 'RedHat'"
   block:
     - name: "oauth2_proxy | Update dnf cache"
       ansible.builtin.dnf:
         update_cache: "yes"
     - name: "oauth2_proxy | Install package with dnf"
       ansible.builtin.dnf:
-        name: "{{ hostvars[inventory_hostname]['oauth2_proxy_package'] }}"
-        state: "{{ vars['oauth2p_package_state'] | default(omit) }}"
+        name: "{{ lookup('ansible.builtin.vars', 'oauth2_proxy_package') }}"
+        state: "{{ lookup('ansible.builtin.vars', 'oauth2p_package_state') }}"
 - name: "oauth2_proxy | Install the required packages in Debian derivatives"
   when:
-    - "hostvars[inventory_hostname]['ansible_os_family'] == 'Debian'"
+    - "hostvars[inventory_hostname]['ansible_facts']['os_family'] == 'Debian'"
   block:
     - name: "oauth2_proxy | Update apt cache"
       ansible.builtin.apt:
         update_cache: "yes"
     - name: "oauth2_proxy | Install package with apt"
       ansible.builtin.apt:
-        name: "{{ hostvars[inventory_hostname]['oauth2_proxy_package'] }}"
-        state: "{{ vars['oauth2p_package_state'] | default(omit) }}"
-- name: "oauth2_proxy | Install the required packages in ArchLinux
-    derivatives"
+        name: "{{ lookup('ansible.builtin.vars', 'oauth2_proxy_package') }}"
+        state: "{{ lookup('ansible.builtin.vars', 'oauth2p_package_state') }}"
+- name: "oauth2_proxy | Install the required packages in ArchLinux derivatives"
   when:
-    - "hostvars[inventory_hostname]['ansible_os_family'] == 'Archlinux'"
+    - "hostvars[inventory_hostname]['ansible_facts']['os_family'] ==
+      'Archlinux'"
   block:
     - name: "oauth2_proxy | Update pacman cache"
       community.general.pacman:
         update_cache: "yes"
     - name: "oauth2_proxy | Install package with pacman"
       community.general.pacman:
-        name: "{{ hostvars[inventory_hostname]['oauth2_proxy_package'] }}"
-        state: "{{ vars['oauth2p_package_state'] | default(omit) }}"
+        name: "{{ lookup('ansible.builtin.vars', 'oauth2_proxy_package') }}"
+        state: "{{ lookup('ansible.builtin.vars', 'oauth2p_package_state') }}"
