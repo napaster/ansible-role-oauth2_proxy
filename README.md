@@ -375,6 +375,9 @@ oauth2_proxy:
       tls_min_version: ''
 # List of IPs or CIDR ranges to allow to bypass authentication
       trusted_ip: ''
+# List of IPs or CIDR ranges that are allowed to set 'X-Forwarded-*' headers
+# when reverse proxy is enabled
+      trusted_proxy_ip: ''
 # The http url(s) of the upstream endpoint, file:// paths for static files or
 # static://<status_code> for static response. Routing is based on the path
       upstream: ''
