@@ -1,0 +1,31 @@
+---
+- name: "oauth2_proxy | Deploy oauth2_proxy configuration"
+  ansible.builtin.template:
+    src: "oauth2-proxy.j2"
+    dest: "{{ lookup('ansible.builtin.vars', 'oauth2_proxy_dest') +
+      '/oauth2-proxy.' + (lookup('ansible.builtin.vars',
+      'oauth2_proxy_conf', default='conf'))  }}"
+    owner: "root"
+    # В конфиге лежат client_secret и cookie_secret. 0644 сделал бы их
+    # читаемыми любому пользователю на хосте; группу берём из переменной,
+    # чтобы сам oauth2-proxy мог читать файл под своей учёткой.
+    group: "{{ lookup('ansible.builtin.vars', 'oauth2_proxy_group',
+      default='root') }}"
+    mode: "0640"
+    validate: "oauth2-proxy --config-test --config %s"
+  # no_log — иначе --check --diff напечатает секреты в вывод.
+  no_log: true
+  notify:
+    - "Restart oauth2_proxy"
+- name: "oauth2_proxy | Enable oauth2_proxy service"
+  ansible.builtin.systemd:
+    name: "{{ lookup('ansible.builtin.vars', 'oauth2_proxy_service') }}"
+    enabled: "yes"
+  when:
+    - "lookup('ansible.builtin.vars', 'oauth2_proxy', default='')
+      not in ['', [], '[]', None]"
+    - "lookup('ansible.builtin.vars', 'oauth2_proxy') |
+       community.general.json_query(lookup('ansible.builtin.vars',
+      'oauth2p_enable', default='')) == 'true'"
+  vars:
+    oauth2p_enable: "[] | map(&enable || 'false', @) | [0]"
